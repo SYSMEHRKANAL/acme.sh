@@ -8,7 +8,7 @@ Options:
  AF_API_PASSWORD API Password
 Issues: github.com/acmesh-official/acme.sh/issues/4718
 Author: Martin Arndt <https://troublezone.net/>
-Author: Sebastian Mendyka <https://www.mehrkanal.com>
+Author: Sebastian Mendyka MEHRKANAL GmbH <https://www.mehrkanal.com>
 '
 
 ########## API configuration ###################################################
@@ -44,7 +44,7 @@ dns_artfiles_add() {
   fi
 
   _clean_records
-  _subdomain="${_orig_fqdn%.$domain}"
+  _subdomain="${_orig_fqdn%."$domain"}"
   _dns 'SET' "$(printf -- '%s\n%s "%s"' "$response" "$_subdomain" "$txtValue")"
   if ! _contains "$response" "$AF_API_SUCCESS"; then
     _err 'Adding ACME challenge value failed.'
