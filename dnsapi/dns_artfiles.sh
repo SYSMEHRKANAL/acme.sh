@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/bash
 # shellcheck disable=SC2034
 dns_artfiles_info='ArtFiles.de
 Site: ArtFiles.de
@@ -8,6 +8,7 @@ Options:
  AF_API_PASSWORD API Password
 Issues: github.com/acmesh-official/acme.sh/issues/4718
 Author: Martin Arndt <https://troublezone.net/>
+Author: Sebastian Mendyka MEHRKANAL GmbH <https://www.mehrkanal.com>
 '
 
 ########## API configuration ###################################################
@@ -33,6 +34,7 @@ dns_artfiles_add() {
   _saveaccountconf_mutable 'AF_API_PASSWORD' "$AF_API_PASSWORD"
 
   _set_headers
+  _orig_fqdn="$domain"
   _get_zone "$domain"
   _dns 'GET'
   if ! _contains "$response" 'TXT'; then
@@ -42,7 +44,8 @@ dns_artfiles_add() {
   fi
 
   _clean_records
-  _dns 'SET' "$(printf -- '%s\n_acme-challenge "%s"' "$response" "$txtValue")"
+  _subdomain="${_orig_fqdn%."$domain"}"
+  _dns 'SET' "$(printf -- '%s\n%s "%s"' "$response" "$_subdomain" "$txtValue")"
   if ! _contains "$response" "$AF_API_SUCCESS"; then
     _err 'Adding ACME challenge value failed.'
 
@@ -61,6 +64,7 @@ dns_artfiles_rm() {
 
   _set_credentials
   _set_headers
+  _orig_fqdn="$domain"
   _get_zone "$domain"
   if ! _dns 'GET'; then
     return 1
@@ -73,7 +77,8 @@ dns_artfiles_rm() {
   fi
 
   _clean_records
-  response="$(printf -- '%s' "$response" | sed '/_acme-challenge "'"$txtValue"'"/d')"
+  _subdomain="${_orig_fqdn%."$domain"}"
+  response="$(printf -- '%s' "$response" | sed '/'"$_subdomain"' "'"$txtValue"'"/d')"
   _dns 'SET' "$response"
   if ! _contains "$response" "$AF_API_SUCCESS"; then
     _err 'Removing ACME challenge value failed.'
@@ -108,7 +113,8 @@ _dns() {
 
   if [ "$action" = 'SET' ]; then
     _debug2 'Payload' "$payload"
-    response="$(_post '' "$url&TXT=$payload" '' 'POST' 'application/x-www-form-urlencoded')"
+    _url_post="$(printf -- '%s' "$url" | sed 's/?.*//')"
+    response="$(_post "domain=${domain}&TXT=$payload" "$_url_post" '' 'POST' 'application/x-www-form-urlencoded')"
   else
     response="$(_get "$url" '' 10)"
   fi
@@ -167,11 +173,10 @@ _set_credentials() {
   fi
 }
 
-# Adds the HTTP Authorization & Content-Type headers to a follow-up request.
+# Adds the HTTP Authorization header to a follow-up request.
 # Usage: _set_headers
 _set_headers() {
   _info 'Setting headers…'
   encoded="$(printf -- '%s:%s' "$AF_API_USERNAME" "$AF_API_PASSWORD" | _base64)"
   export _H1="Authorization: Basic $encoded"
-  export _H2='Content-Type: application/json'
 }
