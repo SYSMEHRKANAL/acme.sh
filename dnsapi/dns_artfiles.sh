@@ -64,6 +64,7 @@ dns_artfiles_rm() {
 
   _set_credentials
   _set_headers
+  _orig_fqdn="$domain"
   _get_zone "$domain"
   if ! _dns 'GET'; then
     return 1
@@ -76,7 +77,8 @@ dns_artfiles_rm() {
   fi
 
   _clean_records
-  response="$(printf -- '%s' "$response" | sed '/_acme-challenge "'"$txtValue"'"/d')"
+  _subdomain="${_orig_fqdn%."$domain"}"
+  response="$(printf -- '%s' "$response" | sed '/'"$_subdomain"' "'"$txtValue"'"/d')"
   _dns 'SET' "$response"
   if ! _contains "$response" "$AF_API_SUCCESS"; then
     _err 'Removing ACME challenge value failed.'
