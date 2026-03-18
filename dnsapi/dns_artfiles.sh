@@ -8,7 +8,7 @@ Options:
  AF_API_PASSWORD API Password
 Issues: github.com/acmesh-official/acme.sh/issues/4718
 Author: Martin Arndt <https://troublezone.net/>
-Author: Sebastian Mendyka MEHRKANAL GmbH <https://www.mehrkanal.com>
+Author: Sebastian Mendyka <https://www.mehrkanal.com>
 '
 
 ########## API configuration ###################################################
